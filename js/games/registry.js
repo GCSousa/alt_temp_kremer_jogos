@@ -27,7 +27,8 @@ export const GAMES = [
     subcategory: 'Apenas Movimentação',
     origin: null,
     description: 'Peças já posicionadas. Qualquer peça pode mover para qualquer posição livre.',
-    available: false,
+    available: true,
+    moduleLoader: () => import('./Game2.js'),
   },
   {
     id: 'tapatan',
@@ -38,7 +39,8 @@ export const GAMES = [
     subcategory: 'Apenas Movimentação',
     origin: 'Indonésia / Filipinas',
     description: 'Peças movem para posições vizinhas livres pelas linhas do tabuleiro.',
-    available: false,
+    available: true,
+    moduleLoader: () => import('./Game3.js'),
   },
   {
     id: 'shisima',

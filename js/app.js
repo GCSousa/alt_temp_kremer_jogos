@@ -5,7 +5,7 @@ import { MinimaxAI, DIFFICULTY } from './engine/MinimaxAI.js';
 const state = {
   currentGameDef: null,
   gameInstance:   null,
-  boardRenderer:  null,   // function(gameState, result, clickHandler) -> SVGElement
+  boardRenderer:  null,   // function(gameState, result, clickHandler, uiState?) -> SVGElement
   gameState:      null,
   mode:           'local',
   difficulty:     'medium',
@@ -16,6 +16,8 @@ const state = {
   p1Name:         'Jogador 1',
   p2Name:         'Jogador 2',
   isAIThinking:   false,
+  selectedPiece:  null,   // for movement games: currently selected piece index
+  validDests:     [],     // for movement games: valid destination indices
 };
 
 // ─── Screen management ───────────────────────────────────────
@@ -137,12 +139,12 @@ function miniGridSVG() {
     <line x1="40" y1="4" x2="40" y2="56" stroke="#6b3d1e" stroke-width="2.5" stroke-linecap="round"/>
     <line x1="4"  y1="20" x2="56" y2="20" stroke="#6b3d1e" stroke-width="2.5" stroke-linecap="round"/>
     <line x1="4"  y1="40" x2="56" y2="40" stroke="#6b3d1e" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="10" y1="10" x2="26" y2="26" stroke="#4f8ef7" stroke-width="3.5" stroke-linecap="round"/>
-    <line x1="26" y1="10" x2="10" y2="26" stroke="#4f8ef7" stroke-width="3.5" stroke-linecap="round"/>
-    <circle cx="50" cy="30" r="7" fill="none" stroke="#f05c5c" stroke-width="3.5"/>
-    <circle cx="30" cy="50" r="7" fill="none" stroke="#f05c5c" stroke-width="3.5"/>
-    <line x1="34" y1="14" x2="46" y2="14" stroke="#4f8ef7" stroke-width="3.5" stroke-linecap="round"/>
-    <line x1="40" y1="8"  x2="40" y2="20" stroke="#4f8ef7" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="10" y1="10" x2="26" y2="26" stroke="#dcdcdc" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="26" y1="10" x2="10" y2="26" stroke="#dcdcdc" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="50" cy="30" r="7" fill="none" stroke="#686868" stroke-width="3.5"/>
+    <circle cx="30" cy="50" r="7" fill="none" stroke="#686868" stroke-width="3.5"/>
+    <line x1="34" y1="14" x2="46" y2="14" stroke="#dcdcdc" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="40" y1="8"  x2="40" y2="20" stroke="#dcdcdc" stroke-width="3.5" stroke-linecap="round"/>
   </svg>`;
 }
 
@@ -211,6 +213,8 @@ function startRound() {
   state.gameState = state.gameInstance.getInitialState();
   state.gameState.currentPlayer = state.startingPlayer;
   state.isAIThinking = false;
+  state.selectedPiece = null;
+  state.validDests = [];
 
   // Update labels
   document.getElementById('game-topbar-title').textContent = state.currentGameDef.name;
@@ -239,9 +243,16 @@ function renderBoard() {
   const humanTurn = state.mode === 'local' ||
     state.gameState.currentPlayer !== state.aiPlayer;
   const clickable = !result.over && !state.isAIThinking && humanTurn;
-  const clickHandler = clickable ? handleCellClick : null;
 
-  const svg = state.boardRenderer(state.gameState, result, clickHandler);
+  const isMovement = state.gameInstance.interactionMode === 'movement';
+  const clickHandler = clickable
+    ? (isMovement ? handlePositionClick : handleCellClick)
+    : null;
+  const uiState = isMovement
+    ? { selectedPiece: state.selectedPiece, validDests: state.validDests }
+    : undefined;
+
+  const svg = state.boardRenderer(state.gameState, result, clickHandler, uiState);
 
   boardEl.innerHTML = '';
   boardEl.appendChild(svg);
@@ -255,6 +266,47 @@ function handleCellClick(cellIndex) {
   if (!state.gameInstance.getValidMoves(state.gameState).includes(cellIndex)) return;
 
   applyMove(cellIndex);
+}
+
+function handlePositionClick(idx) {
+  if (state.isAIThinking) return;
+  const result = state.gameInstance.checkResult(state.gameState);
+  if (result.over) return;
+
+  const board = state.gameState.board;
+  const currentPlayer = state.gameState.currentPlayer;
+
+  if (state.selectedPiece === null) {
+    if (board[idx] !== currentPlayer) return;
+    state.selectedPiece = idx;
+    const validMoves = state.gameInstance.getValidMoves(state.gameState);
+    state.validDests = validMoves.filter(m => m.from === idx).map(m => m.to);
+    renderBoard();
+  } else {
+    if (idx === state.selectedPiece) {
+      // Deselect
+      state.selectedPiece = null;
+      state.validDests = [];
+      renderBoard();
+    } else if (state.validDests.includes(idx)) {
+      // Execute move
+      const from = state.selectedPiece;
+      state.selectedPiece = null;
+      state.validDests = [];
+      applyMove({ from, to: idx });
+    } else if (board[idx] === currentPlayer) {
+      // Switch selection to another own piece
+      state.selectedPiece = idx;
+      const validMoves = state.gameInstance.getValidMoves(state.gameState);
+      state.validDests = validMoves.filter(m => m.from === idx).map(m => m.to);
+      renderBoard();
+    } else {
+      // Invalid click — deselect
+      state.selectedPiece = null;
+      state.validDests = [];
+      renderBoard();
+    }
+  }
 }
 
 function applyMove(move) {
@@ -280,6 +332,8 @@ function applyMove(move) {
 
 function scheduleAIMove() {
   state.isAIThinking = true;
+  state.selectedPiece = null;
+  state.validDests = [];
   renderBoard(); // remove click handlers
 
   // Show thinking indicator

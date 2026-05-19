@@ -113,9 +113,9 @@ export function renderTicTacToeBoard(state, result, onCellClick) {
   g1.setAttribute('x1', '0%'); g1.setAttribute('y1', '0%');
   g1.setAttribute('x2', '100%'); g1.setAttribute('y2', '100%');
   const g1s1 = document.createElementNS(NS, 'stop');
-  g1s1.setAttribute('offset', '0%'); g1s1.setAttribute('stop-color', '#93b8fc');
+  g1s1.setAttribute('offset', '0%'); g1s1.setAttribute('stop-color', '#f5f5f5');
   const g1s2 = document.createElementNS(NS, 'stop');
-  g1s2.setAttribute('offset', '100%'); g1s2.setAttribute('stop-color', '#2563eb');
+  g1s2.setAttribute('offset', '100%'); g1s2.setAttribute('stop-color', '#c0c0c0');
   g1.appendChild(g1s1); g1.appendChild(g1s2);
   defs.appendChild(g1);
 
@@ -125,9 +125,9 @@ export function renderTicTacToeBoard(state, result, onCellClick) {
   g2.setAttribute('x1', '0%'); g2.setAttribute('y1', '0%');
   g2.setAttribute('x2', '100%'); g2.setAttribute('y2', '100%');
   const g2s1 = document.createElementNS(NS, 'stop');
-  g2s1.setAttribute('offset', '0%'); g2s1.setAttribute('stop-color', '#f9a0a0');
+  g2s1.setAttribute('offset', '0%'); g2s1.setAttribute('stop-color', '#585858');
   const g2s2 = document.createElementNS(NS, 'stop');
-  g2s2.setAttribute('offset', '100%'); g2s2.setAttribute('stop-color', '#dc2626');
+  g2s2.setAttribute('offset', '100%'); g2s2.setAttribute('stop-color', '#1c1c1c');
   g2.appendChild(g2s1); g2.appendChild(g2s2);
   defs.appendChild(g2);
 
@@ -148,7 +148,7 @@ export function renderTicTacToeBoard(state, result, onCellClick) {
 
   // --- Win cell highlights ---
   if (result.over && result.line) {
-    const colors = { 1: 'rgba(79,142,247,0.25)', 2: 'rgba(240,92,92,0.25)' };
+    const colors = { 1: 'rgba(220,220,220,0.2)', 2: 'rgba(60,60,60,0.35)' };
     for (const idx of result.line) {
       const col = idx % 3;
       const row = Math.floor(idx / 3);
@@ -277,7 +277,7 @@ export function renderTicTacToeBoard(state, result, onCellClick) {
     const wl = document.createElementNS(NS, 'line');
     wl.setAttribute('x1', pa.x); wl.setAttribute('y1', pa.y);
     wl.setAttribute('x2', pc.x); wl.setAttribute('y2', pc.y);
-    wl.setAttribute('stroke', result.winner === 1 ? '#93b8fc' : '#f9a0a0');
+    wl.setAttribute('stroke', result.winner === 1 ? '#f0f0f0' : '#888888');
     wl.setAttribute('stroke-width', '6');
     wl.setAttribute('stroke-linecap', 'round');
     wl.setAttribute('class', 'win-line');
