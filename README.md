@@ -1,6 +1,8 @@
+# 21 Jogos Lógicos no Mesmo Tabuleiro: Webapp Interativo
+
 ## Sobre
 
-Desenvolvido por um doutorando em Ciência da Computação.
+Desenvolvido por Gustavo Ribeiro Kremer, doutorando em Ciência da Computação.
 
 **Nota de desenvolvimento:** este projeto foi criado com assistência do [Claude Code](https://claude.ai/code) (Anthropic).
 

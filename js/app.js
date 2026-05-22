@@ -1,5 +1,6 @@
 import { GAMES, BONUS_GAMES, CATEGORIES } from './games/registry.js';
 import { MinimaxAI, DIFFICULTY } from './engine/MinimaxAI.js';
+import { initStory, showStoryScreen, generateCode, markCompleted } from './story.js';
 
 // ─── App State ────────────────────────────────────────────────
 const state = {
@@ -18,6 +19,7 @@ const state = {
   isAIThinking:   false,
   selectedPiece:  null,   // for movement games: currently selected piece index
   validDests:     [],     // for movement games: valid destination indices
+  story: { active: false, level: null, difficulty: null },
 };
 
 // ─── Screen management ───────────────────────────────────────
@@ -176,6 +178,133 @@ function activateBtn(groupSelector, value) {
   });
 }
 
+// ─── STORY MODE ───────────────────────────────────────────────
+async function startStoryLevel(gameDef, difficulty, playAsDark = false) {
+  state.story    = { active: true, level: gameDef.num, difficulty };
+  state.currentGameDef = gameDef;
+  state.mode     = 'ai';
+  state.difficulty = difficulty;
+  state.startingPlayer = 1;
+  state.aiPlayer = playAsDark ? 1 : 2;
+  if (playAsDark) {
+    state.p1Name = '🤖 IA';
+    state.p2Name = 'Você';
+  } else {
+    state.p1Name = 'Você';
+    state.p2Name = '🤖 IA';
+  }
+  await startGame();
+}
+
+function handleStoryGameOver(result) {
+  if (result.winner === 1)      state.score[1]++;
+  else if (result.winner === 2) state.score[2]++;
+  else                          state.score.draw++;
+  updateScoreDisplay();
+
+  document.getElementById('player1-card').classList.remove('active-turn');
+  document.getElementById('player2-card').classList.remove('active-turn');
+
+  const humanWon = result.winner !== 0 && result.winner !== null && result.winner !== state.aiPlayer;
+  if (humanWon) {
+    document.getElementById('status-text').textContent = 'Você venceu! 🎉';
+  } else if (result.winner === state.aiPlayer) {
+    document.getElementById('status-text').textContent = 'A IA venceu. Continue tentando!';
+  } else {
+    document.getElementById('status-text').textContent = 'Empate!';
+  }
+
+  setTimeout(() => showStoryWinOverlay(result), 700);
+}
+
+function showStoryWinOverlay(result) {
+  const { level, difficulty } = state.story;
+  const overlay        = document.getElementById('win-overlay');
+  const emoji          = document.getElementById('win-emoji');
+  const title          = document.getElementById('win-title');
+  const subtitle       = document.getElementById('win-subtitle');
+  const normalActions  = document.getElementById('win-actions');
+  const storyActions   = document.getElementById('story-win-actions');
+  const codeBlock      = document.getElementById('story-win-code');
+
+  normalActions.style.display = 'none';
+  storyActions.style.display  = 'flex';
+  codeBlock.style.display     = 'none';
+
+  const playerWon = result.winner !== 0 && result.winner !== null && result.winner !== state.aiPlayer;
+  const isDraw    = result.winner === 0;
+
+  function leaveStory() {
+    overlay.classList.remove('visible');
+    normalActions.style.display = '';
+    storyActions.style.display  = 'none';
+    codeBlock.style.display     = 'none';
+    state.story    = { active: false, level: null, difficulty: null };
+    state.p1Name   = 'Jogador 1';
+    state.p2Name   = 'Jogador 2';
+    state.aiPlayer = 2;
+    showStoryScreen();
+  }
+
+  if (playerWon) {
+    const progress = markCompleted(level, difficulty);
+
+    if (difficulty === 'medium') {
+      emoji.textContent    = '🎉';
+      title.textContent    = `Nível ${level} concluído!`;
+      subtitle.textContent = 'Você derrotou a IA no nível médio!';
+
+      // Mostrar código de desbloqueio
+      document.getElementById('story-win-code-value').textContent = generateCode(level);
+      codeBlock.style.display = 'block';
+
+      const hasNext = level < 21 && progress.unlockedUpTo > level && GAMES.find(g => g.num === level + 1);
+      storyActions.innerHTML = `
+        ${hasNext ? `<button class="btn-primary" id="sw-next">Próximo Nível ›</button>` : ''}
+        <button class="btn-secondary" id="sw-map">Voltar ao Mapa</button>
+      `;
+      if (hasNext) {
+        document.getElementById('sw-next').addEventListener('click', leaveStory);
+      }
+    } else {
+      emoji.textContent    = '🌱';
+      title.textContent    = 'Bom treino!';
+      subtitle.textContent = 'Derrote a IA no médio para avançar ao próximo nível.';
+      storyActions.innerHTML = `
+        <button class="btn-primary" id="sw-medium">⚡ Tentar no Médio</button>
+        <button class="btn-secondary" id="sw-map">Voltar ao Mapa</button>
+      `;
+      document.getElementById('sw-medium').addEventListener('click', () => {
+        overlay.classList.remove('visible');
+        state.story.difficulty = 'medium';
+        state.difficulty = 'medium';
+        const diff = DIFFICULTY['medium'];
+        state.ai = new MinimaxAI(state.gameInstance, diff.depth, diff.randomize);
+        state.score  = { 1: 0, 2: 0, draw: 0 };
+        updateScoreDisplay();
+        startRound();
+      });
+    }
+  } else {
+    emoji.textContent    = isDraw ? '🤝' : '💪';
+    title.textContent    = isDraw ? 'Empate!' : 'Quase lá!';
+    subtitle.textContent = isDraw
+      ? 'Tente novamente para vencer a IA.'
+      : 'A IA venceu desta vez. Continue praticando!';
+    storyActions.innerHTML = `
+      <button class="btn-primary" id="sw-retry">Tentar Novamente</button>
+      <button class="btn-secondary" id="sw-map">Voltar ao Mapa</button>
+    `;
+    document.getElementById('sw-retry').addEventListener('click', () => {
+      overlay.classList.remove('visible');
+      startRound();
+    });
+  }
+
+  document.getElementById('sw-map').addEventListener('click', leaveStory);
+  overlay.classList.add('visible');
+}
+
 // ─── START GAME ───────────────────────────────────────────────
 async function startGame() {
   const def = state.currentGameDef;
@@ -189,10 +318,10 @@ async function startGame() {
   if (state.mode === 'ai') {
     const diff = DIFFICULTY[state.difficulty];
     state.ai = new MinimaxAI(state.gameInstance, diff.depth, diff.randomize);
-    state.p2Name = `🤖 IA — ${diff.label}`;
+    if (!state.story.active) state.p2Name = `🤖 IA — ${diff.label}`;
   } else {
     state.ai = null;
-    state.p2Name = 'Jogador 2';
+    if (!state.story.active) state.p2Name = 'Jogador 2';
   }
 
   // Reset scores for new game session
@@ -217,7 +346,9 @@ function startRound() {
   state.validDests = [];
 
   // Update labels
-  document.getElementById('game-topbar-title').textContent = state.currentGameDef.name;
+  document.getElementById('game-topbar-title').textContent = state.story.active
+    ? `Nível ${state.story.level}: ${state.currentGameDef.name}`
+    : state.currentGameDef.name;
   document.getElementById('player1-name').textContent = state.p1Name;
   document.getElementById('player2-name').textContent = state.p2Name;
 
@@ -394,6 +525,8 @@ function updateTurnUI() {
 
 // ─── GAME OVER ───────────────────────────────────────────────
 function handleGameOver(result) {
+  if (state.story.active) { handleStoryGameOver(result); return; }
+
   if (result.winner === 1)      state.score[1]++;
   else if (result.winner === 2) state.score[2]++;
   else                          state.score.draw++;
@@ -452,6 +585,10 @@ function updateScoreDisplay() {
 document.addEventListener('DOMContentLoaded', () => {
   buildHomeScreen();
 
+  // ── Story mode init ──
+  initStory({ onPlayLevel: startStoryLevel, showScreen });
+  document.getElementById('btn-enter-story').addEventListener('click', showStoryScreen);
+
   // ── Setup back ──
   document.getElementById('btn-setup-back').addEventListener('click', () => showScreen('screen-home'));
 
@@ -491,7 +628,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Game: back ──
   document.getElementById('btn-game-back').addEventListener('click', () => {
     state.isAIThinking = false;
-    openSetup(state.currentGameDef);
+    if (state.story.active) {
+      // Restore win overlay to default state before leaving
+      document.getElementById('win-overlay').classList.remove('visible');
+      document.getElementById('win-actions').style.display = '';
+      document.getElementById('story-win-actions').style.display = 'none';
+      document.getElementById('story-win-code').style.display = 'none';
+      state.story    = { active: false, level: null, difficulty: null };
+      state.p1Name   = 'Jogador 1';
+      state.p2Name   = 'Jogador 2';
+      state.aiPlayer = 2;
+      showStoryScreen();
+    } else {
+      openSetup(state.currentGameDef);
+    }
   });
 
   // ── Game: restart (clears scores too) ──
