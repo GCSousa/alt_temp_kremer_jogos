@@ -1,8 +1,8 @@
 ## Sobre
 
-Desenvolvido por um doutorando em Ciência da Computação como projeto de programação assistida por IA.
+Desenvolvido por um doutorando em Ciência da Computação.
 
-Construído com [Claude Code](https://claude.ai/code) (Anthropic) — desenvolvimento guiado por agentes de IA do início ao fim.
+**Nota de desenvolvimento:** este projeto foi criado com assistência do [Claude Code](https://claude.ai/code) (Anthropic).
 
 ---
 
