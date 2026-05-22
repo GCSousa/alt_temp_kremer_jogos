@@ -44,3 +44,19 @@ A IA usa Minimax com poda alpha-beta em três níveis de dificuldade (fácil, m�
 ```bash
 python -m http.server 8080
 ```
+
+---
+
+## Citação
+
+Se você usar este projeto em trabalhos acadêmicos (artigos, teses, relatórios técnicos ou material didático), cite-o como:
+
+```bibtex
+@software{Kremer_21JogosLogicos,
+  author       = {Gustavo Ribeiro Kremer},
+  title        = {{21 Jogos Lógicos no Mesmo Tabuleiro}: Webapp Interativo},
+  year         = {2025},
+  url          = {https://github.com/grkremer/21_jogos_tabuleiro},
+  note         = {Baseado no livro de Renato P. Ribas (CMS/Metamorfose, 2025, ISBN 978-65-6144-054-7)},
+}
+```
