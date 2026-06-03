@@ -4,6 +4,10 @@ Flask API — 21 Jogos Lógicos no Mesmo Tabuleiro
 Stateless REST API. Game state travels in the request body.
 All game logic runs in Python (engine + games packages).
 """
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
