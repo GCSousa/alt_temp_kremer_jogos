@@ -22,7 +22,7 @@ CORS(app)  # Allow Next.js frontend to call the API
 # ─── Game Endpoints ────────────────────────────────────────────
 
 
-@app.route("/api/games", methods=["GET"])
+@app.route("/games", methods=["GET"])
 def list_games():
     """List all games with metadata."""
     return jsonify({
@@ -32,7 +32,7 @@ def list_games():
     })
 
 
-@app.route("/api/game/start", methods=["POST"])
+@app.route("/game/start", methods=["POST"])
 def start_game():
     """Start a new game. Returns the initial state."""
     data = request.get_json()
@@ -59,7 +59,7 @@ def start_game():
     })
 
 
-@app.route("/api/game/move", methods=["POST"])
+@app.route("/game/move", methods=["POST"])
 def apply_move():
     """Apply a human move. Returns updated state, result, and valid moves."""
     data = request.get_json()
@@ -103,7 +103,7 @@ def apply_move():
     })
 
 
-@app.route("/api/game/ai-move", methods=["POST"])
+@app.route("/game/ai-move", methods=["POST"])
 def ai_move():
     """Calculate and apply the AI's best move."""
     data = request.get_json()
@@ -144,7 +144,7 @@ def ai_move():
     })
 
 
-@app.route("/api/game/valid-moves", methods=["POST"])
+@app.route("/game/valid-moves", methods=["POST"])
 def get_valid_moves():
     """Get valid moves for a given state."""
     data = request.get_json()
@@ -162,7 +162,7 @@ def get_valid_moves():
     })
 
 
-@app.route("/api/game/check-result", methods=["POST"])
+@app.route("/game/check-result", methods=["POST"])
 def check_result():
     """Check if the game is over."""
     data = request.get_json()
@@ -180,7 +180,7 @@ def check_result():
 # ─── Story Mode Endpoints ─────────────────────────────────────
 
 
-@app.route("/api/story/verify-code", methods=["POST"])
+@app.route("/story/verify-code", methods=["POST"])
 def story_verify_code():
     """Verify an unlock code. Returns level number or error."""
     data = request.get_json()
@@ -191,7 +191,7 @@ def story_verify_code():
     return jsonify({"valid": True, "level": level})
 
 
-@app.route("/api/story/generate-code", methods=["POST"])
+@app.route("/story/generate-code", methods=["POST"])
 def story_generate_code():
     """Generate the unlock code for a given level."""
     data = request.get_json()
@@ -204,7 +204,7 @@ def story_generate_code():
 # ─── Health Check ──────────────────────────────────────────────
 
 
-@app.route("/api/health", methods=["GET"])
+@app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "games_available": sum(1 for g in GAMES if g["available"])})
 
